@@ -50,9 +50,10 @@
   .error { color: var(--red); font-size: 0.85rem; min-height: 18px; margin-top: -4px; margin-bottom: 8px; }
 
   /* Top bar */
-  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .topbar-right { display: flex; align-items: center; gap: 10px; }
-  #soundToggle { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 10px; }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+  .topbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .topbar-right button { padding: 7px 10px; font-size: 0.8rem; }
+  #soundToggle { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 7px 10px; }
   #logoutBtn { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 
   /* Tabs */
