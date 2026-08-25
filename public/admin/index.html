@@ -158,6 +158,62 @@
   .user-meta { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
   .user-bot-toggle { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .user-bot-label { font-size: 0.78rem; color: var(--muted); }
+
+  /* Large modal panels (tournaments, bot players) */
+  .big-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 24px; width: 96vw; max-width: 860px; max-height: 88vh;
+    display: flex; flex-direction: column;
+  }
+  .big-panel h2 { margin: 0 0 4px; font-size: 1.15rem; }
+  .big-panel .sub { margin-bottom: 16px; }
+  .panel-toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .panel-toolbar input { margin-bottom: 0; flex: 1; min-width: 180px; }
+  .panel-table-wrap { overflow: auto; flex: 1; min-height: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .btn-sm { padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-edit { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-enable { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-active { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-inactive { background: rgba(139,150,171,0.15); color: var(--muted); }
+
+  /* Inner edit modal (tournament form, bot form) */
+  .inner-modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    align-items: center; justify-content: center; z-index: 80; padding: 20px;
+  }
+  .inner-modal-bg.open { display: flex; }
+  .inner-modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+  }
+  .inner-modal h3 { margin: 0 0 20px; font-size: 1.05rem; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .form-input {
+    width: 100%; padding: 10px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 0.9rem; margin-bottom: 0;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions button { flex: 1; }
+
+  /* Color picker */
+  .color-picker-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: transform 0.15s;
+  }
+  .color-swatch.selected { border-color: #fff; transform: scale(1.2); }
+  .color-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; border: 2px solid rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
@@ -179,6 +235,8 @@
       <div class="sub">Wallet recharge review — Tambola Circle</div>
     </div>
     <div class="topbar-right">
+      <button class="btn-ghost" onclick="openTournamentsPanel()">🏆 Tournaments</button>
+      <button class="btn-ghost" onclick="openBotsPanel()">🤖 Bot Players</button>
       <button id="usersBtn" class="btn-ghost" onclick="openUsersModal()">👥 Users</button>
       <button id="settingsBtn" class="btn-ghost" onclick="openSettingsModal()">⚙️ Bot Settings</button>
       <button id="soundToggle" onclick="toggleSound()">🔔 Sound: On</button>
@@ -248,6 +306,79 @@
     <div class="sub">Toggle "Bot" to include/exclude a user from tournament &amp; Quick Play auto-fill</div>
     <input id="userSearch" placeholder="Search by name, username, email or phone…" oninput="debouncedLoadUsers()" />
     <div id="usersList"></div>
+  </div>
+</div>
+
+<!-- Tournaments Panel -->
+<div class="modal-bg" id="tournamentsPanelBg" onclick="if(event.target===this)closeTournamentsPanel()">
+  <div class="big-panel">
+    <h2>🏆 Tournaments</h2>
+    <div class="sub">Create and manage scheduled tournaments</div>
+    <div class="panel-toolbar">
+      <input id="tSearch" placeholder="Search tournaments…" oninput="filterTournaments()" />
+      <button class="btn-primary" style="width:auto;padding:10px 18px" onclick="openTournamentModal()">+ New Tournament</button>
+    </div>
+    <div class="panel-table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Amount</th><th>Tickets</th><th>Start</th><th>End</th><th>Valid Until</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tournamentsBody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Tournament Edit Modal -->
+<div class="inner-modal-bg" id="tournamentModalBg" onclick="if(event.target===this)closeTournamentModal()">
+  <div class="inner-modal">
+    <h3 id="tModalTitle">New Tournament</h3>
+    <input type="hidden" id="tId" />
+    <div class="form-group"><label class="form-label">Tournament Name *</label><input class="form-input" id="tName" placeholder="e.g. Sunday Special" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Entry Amount (₹)</label><input class="form-input" type="number" id="tAmount" min="0" /></div>
+      <div class="form-group"><label class="form-label">Max Tickets</label><input class="form-input" type="number" id="tMaxTickets" min="1" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Start Time (HH:MM:SS)</label><input class="form-input" id="tStartTime" placeholder="20:00:00" /></div>
+      <div class="form-group"><label class="form-label">End Time (HH:MM:SS)</label><input class="form-input" id="tEndTime" placeholder="21:00:00" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Effective From</label><input class="form-input" type="date" id="tEffectiveFrom" /></div>
+      <div class="form-group"><label class="form-label">Valid Until</label><input class="form-input" type="date" id="tValidUpto" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">Prize (₹)</label><input class="form-input" type="number" id="tPrize" min="0" /></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeTournamentModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTournament()">Save Tournament</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bot Players Panel -->
+<div class="modal-bg" id="botsPanelBg" onclick="if(event.target===this)closeBotsPanel()">
+  <div class="big-panel">
+    <h2>🤖 Bot Players</h2>
+    <div class="sub">Manage AI bots that fill tournament seats. Total: <strong id="botCount">–</strong></div>
+    <div class="panel-table-wrap">
+      <table>
+        <thead><tr><th>Bot Name</th><th>Username</th><th>Color</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="botsBody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Bot Edit Modal -->
+<div class="inner-modal-bg" id="botModalBg" onclick="if(event.target===this)closeBotModal()">
+  <div class="inner-modal">
+    <h3>Edit Bot Player</h3>
+    <input type="hidden" id="bId" />
+    <div class="form-group"><label class="form-label">First Name *</label><input class="form-input" id="bFirstName" placeholder="Bot first name" /></div>
+    <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="bLastName" placeholder="Bot last name" /></div>
+    <div class="form-group"><label class="form-label">Display Colour</label><div class="color-picker-row" id="colorPicker"></div></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeBotModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveBot()">Save Changes</button>
+    </div>
   </div>
 </div>
 
@@ -620,6 +751,203 @@ if (authToken) {
   showMain();
 } else {
   showLogin();
+}
+
+// ── Tournaments ──
+const BOT_COLORS = ['#6366f1','#8b5cf6','#ec4899','#ef4444','#f59e0b','#10b981','#06b6d4','#3b82f6','#f97316','#84cc16'];
+let allTournaments = [];
+let allBots = [];
+let currentBotColor = BOT_COLORS[0];
+const botColors = JSON.parse(localStorage.getItem('tc_bot_colors') || '{}');
+
+function saveBotColorLocal(id, color) {
+  botColors[id] = color;
+  localStorage.setItem('tc_bot_colors', JSON.stringify(botColors));
+}
+function getBotColor(id) { return botColors[id] || '#6366f1'; }
+
+async function openTournamentsPanel() {
+  document.getElementById('tournamentsPanelBg').classList.add('open');
+  await loadTournaments();
+}
+function closeTournamentsPanel() {
+  document.getElementById('tournamentsPanelBg').classList.remove('open');
+}
+
+async function loadTournaments() {
+  try {
+    const resp = await api('/admin/tournaments/all');
+    allTournaments = resp.data || [];
+    renderTournaments(allTournaments);
+  } catch(e) {
+    document.getElementById('tournamentsBody').innerHTML = `<tr><td colspan="8" class="empty">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderTournaments(list) {
+  const tbody = document.getElementById('tournamentsBody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No tournaments found.</td></tr>'; return; }
+  tbody.innerHTML = list.map(t => `
+    <tr>
+      <td><strong>${escapeHtml(t.name || t.tournament_name || '–')}</strong></td>
+      <td>₹${t.amount || 0}</td>
+      <td>${t.max_ticket || t.maxTicket || '–'}</td>
+      <td>${escapeHtml(t.start_time || '–')}</td>
+      <td>${escapeHtml(t.end_time || '–')}</td>
+      <td>${t.valid_upto ? t.valid_upto.split('T')[0] : '–'}</td>
+      <td><span class="badge ${t.status ? 'badge-active' : 'badge-inactive'}">${t.status ? 'Active' : 'Inactive'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-ghost btn-sm btn-edit" onclick="editTournament('${t.id}')">Edit</button>
+        <button class="btn-ghost btn-sm btn-danger" onclick="deleteTournament('${t.id}','${escapeHtml(t.name||'').replace(/'/g,"\\'")}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTournaments() {
+  const q = document.getElementById('tSearch').value.toLowerCase();
+  renderTournaments(q ? allTournaments.filter(t => (t.name||t.tournament_name||'').toLowerCase().includes(q)) : allTournaments);
+}
+
+function openTournamentModal(data) {
+  document.getElementById('tModalTitle').textContent = data ? 'Edit Tournament' : 'New Tournament';
+  document.getElementById('tId').value = data?.id || '';
+  document.getElementById('tName').value = data?.name || data?.tournament_name || '';
+  document.getElementById('tAmount').value = data?.amount || '';
+  document.getElementById('tMaxTickets').value = data?.max_ticket || data?.maxTicket || '';
+  document.getElementById('tStartTime').value = data?.start_time || '';
+  document.getElementById('tEndTime').value = data?.end_time || '';
+  document.getElementById('tEffectiveFrom').value = data?.effective_from ? data.effective_from.split('T')[0] : '';
+  document.getElementById('tValidUpto').value = data?.valid_upto ? data.valid_upto.split('T')[0] : '';
+  document.getElementById('tPrize').value = data?.prize || '';
+  document.getElementById('tournamentModalBg').classList.add('open');
+}
+
+function editTournament(id) {
+  const t = allTournaments.find(x => x.id === id);
+  if (t) openTournamentModal(t);
+}
+
+function closeTournamentModal() {
+  document.getElementById('tournamentModalBg').classList.remove('open');
+}
+
+async function saveTournament() {
+  const id = document.getElementById('tId').value;
+  const body = {
+    name: document.getElementById('tName').value.trim(),
+    amount: parseFloat(document.getElementById('tAmount').value) || 0,
+    max_ticket: parseInt(document.getElementById('tMaxTickets').value) || 10,
+    start_time: document.getElementById('tStartTime').value.trim(),
+    end_time: document.getElementById('tEndTime').value.trim(),
+    effective_from: document.getElementById('tEffectiveFrom').value,
+    valid_upto: document.getElementById('tValidUpto').value,
+    prize: parseFloat(document.getElementById('tPrize').value) || 0,
+  };
+  if (!body.name) { alert('Tournament name is required'); return; }
+  try {
+    const resp = id
+      ? await api(`/admin/tournaments/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+      : await api('/admin/tournaments', { method: 'POST', body: JSON.stringify(body) });
+    if (resp.status || resp.data) { closeTournamentModal(); await loadTournaments(); }
+    else alert(resp.message || 'Failed to save');
+  } catch(e) { alert('Network error: ' + e.message); }
+}
+
+async function deleteTournament(id, name) {
+  if (!confirm(`Delete tournament "${name}"? This cannot be undone.`)) return;
+  try {
+    const resp = await api(`/admin/tournaments/${id}`, { method: 'DELETE' });
+    if (resp.status || resp.data) await loadTournaments();
+    else alert(resp.message || 'Failed to delete');
+  } catch(e) { alert('Network error: ' + e.message); }
+}
+
+// ── Bot Players ──
+async function openBotsPanel() {
+  document.getElementById('botsPanelBg').classList.add('open');
+  await loadBots();
+}
+function closeBotsPanel() {
+  document.getElementById('botsPanelBg').classList.remove('open');
+}
+
+async function loadBots() {
+  try {
+    const resp = await api('/admin/users');
+    allBots = (resp.data || []).filter(u => u.is_bot);
+    document.getElementById('botCount').textContent = allBots.length;
+    renderBots(allBots);
+  } catch(e) {
+    document.getElementById('botsBody').innerHTML = `<tr><td colspan="5" class="empty">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderBots(list) {
+  const tbody = document.getElementById('botsBody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No bots found.</td></tr>'; return; }
+  tbody.innerHTML = list.map(b => `
+    <tr>
+      <td><strong>${escapeHtml((b.first_name||'') + ' ' + (b.last_name||''))}</strong></td>
+      <td style="color:var(--muted)">@${escapeHtml(b.user_name||'')}</td>
+      <td><span class="color-dot" style="background:${getBotColor(b.id)}"></span></td>
+      <td><span class="badge ${b.status ? 'badge-active' : 'badge-inactive'}">${b.status ? 'Active' : 'Inactive'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-ghost btn-sm btn-edit" onclick="openBotModal('${b.id}','${escapeHtml((b.first_name||'').replace(/'/g,"\\'"))}','${escapeHtml((b.last_name||'').replace(/'/g,"\\'"))}')">Edit</button>
+        <button class="btn-ghost btn-sm ${b.is_bot ? 'btn-danger' : 'btn-enable'}" onclick="toggleBotStatus('${b.id}',${!b.is_bot},'${escapeHtml((b.first_name||b.user_name||'').replace(/'/g,"\\'"))}')">
+          ${b.is_bot ? 'Disable' : 'Enable'}
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+async function toggleBotStatus(id, enable, name) {
+  if (!confirm(`${enable ? 'Enable' : 'Disable'} bot "${name}"?`)) return;
+  try {
+    await api(`/admin/users/${id}/bot`, { method: 'PUT', body: JSON.stringify({ is_bot: enable }) });
+    await loadBots();
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+
+function openBotModal(id, firstName, lastName) {
+  document.getElementById('bId').value = id;
+  document.getElementById('bFirstName').value = firstName;
+  document.getElementById('bLastName').value = lastName;
+  currentBotColor = getBotColor(id);
+  renderColorPicker();
+  document.getElementById('botModalBg').classList.add('open');
+}
+
+function renderColorPicker() {
+  document.getElementById('colorPicker').innerHTML = BOT_COLORS.map(c => `
+    <div class="color-swatch ${c === currentBotColor ? 'selected' : ''}" style="background:${c}" onclick="selectBotColor('${c}')"></div>`).join('');
+}
+
+function selectBotColor(c) {
+  currentBotColor = c;
+  renderColorPicker();
+}
+
+function closeBotModal() {
+  document.getElementById('botModalBg').classList.remove('open');
+}
+
+async function saveBot() {
+  const id = document.getElementById('bId').value;
+  const firstName = document.getElementById('bFirstName').value.trim();
+  const lastName = document.getElementById('bLastName').value.trim();
+  if (!firstName) { alert('First name is required'); return; }
+  saveBotColorLocal(id, currentBotColor);
+  try {
+    await api(`/admin/users/${id}/bot-details`, {
+      method: 'PUT',
+      body: JSON.stringify({ first_name: firstName, last_name: lastName }),
+    });
+    closeBotModal();
+    await loadBots();
+  } catch(e) {
+    closeBotModal();
+    await loadBots();
+  }
 }
 </script>
 </body>
