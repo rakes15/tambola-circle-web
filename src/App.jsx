@@ -48,8 +48,9 @@ function Hero() {
             <div className="hero-badge">🎱 India's Favourite Online Tambola</div>
             <h1>Play <span>Tambola Circle</span> with your group</h1>
             <p className="hero-desc">
-              The classic game of numbers — no maths required, just quick fingers!
-              Create private rooms, invite friends, and experience real Tambola joy on your phone.
+              Watch numbers called live on the ticker, auto-mark your ticket, and claim
+              Early 5, Top Line, Middle Line, Bottom Line or Full House — all from your phone.
+              Create private rooms or join tournaments and win real prizes.
             </p>
             <div className="hero-actions">
               <a href={DOWNLOAD_URL} target="_blank" rel="noreferrer" className="btn-primary">
@@ -84,12 +85,12 @@ function Hero() {
 }
 
 const features = [
-  { img: '/img/mygames.png',    title: 'My Games',       desc: 'See all your active and completed games in one place. Track wins and progress easily.' },
-  { img: '/img/tournament.png', title: 'Tournaments',     desc: 'Join scheduled tournaments with exciting prizes. Compete with players from across India.' },
-  { img: '/img/practice.png',   title: 'Practice Mode',   desc: 'New to Tambola? Practice for free with bots before playing with real stakes.' },
-  { img: '/img/chips.png',      title: 'Chips & Balance', desc: 'Buy chips, manage your wallet, and add money securely to play and win.' },
-  { img: '/img/money.png',      title: 'Win Real Prizes',  desc: 'Play with chips or real money. Multiple prize categories — First Row, Second Row, Full House.' },
-  { img: '/img/profile.png',    title: 'Your Profile',     desc: 'Manage your profile, view stats, and track your winning history.' },
+  { img: '/img/mygames.png',    title: 'Live Number Ticker',  desc: 'Watch numbers 1–90 called live on the ticker one by one. Your ticket auto-marks every called number — no manual dabbing needed.' },
+  { img: '/img/tournament.png', title: 'Tournaments',          desc: 'Join scheduled tournaments with fixed prize pools. Buy tickets, watch the ticker, and compete with players across India.' },
+  { img: '/img/practice.png',   title: 'Practice with Bots',  desc: 'New to Tambola? Play free practice games with bot players. Learn prize patterns before wagering real chips.' },
+  { img: '/img/chips.png',      title: 'Chips & Wallet',       desc: 'Buy chips securely, track your wallet balance, and request withdrawals anytime. All transactions recorded in real time.' },
+  { img: '/img/money.png',      title: '5 Prize Categories',   desc: 'Win across Early 5, Top Line, Middle Line, Bottom Line, and Full House. Multiple prizes are claimable in every single game.' },
+  { img: '/img/profile.png',    title: 'Your Profile',         desc: 'View your full game history, win stats, wallet balance, and manage KYC details for seamless, instant withdrawals.' },
 ]
 
 function Features() {
@@ -98,8 +99,8 @@ function Features() {
       <div className="container">
         <div className="features-header">
           <span className="section-label">Why Tambola Circle</span>
-          <h2 className="section-title">Everything you love about Tambola,<br />now in your pocket</h2>
-          <p className="section-sub">Built for Indian families and friend groups who want the real Tambola experience — anytime, anywhere.</p>
+          <h2 className="section-title">Everything your Tambola ticket needs,<br />built into one app</h2>
+          <p className="section-sub">Live number ticker, auto-mark, instant prize claims, tournaments, and a secure chips wallet — the real Tambola experience for Indian players everywhere.</p>
         </div>
         <div className="features-grid">
           {features.map((f, i) => (
@@ -118,11 +119,11 @@ function Features() {
 }
 
 const steps = [
-  { title: 'Download Tambola Circle', desc: 'Get Tambola Circle free on your Android device — tap the download button and install in seconds.' },
-  { title: 'Create or Join a Room',   desc: 'Start a private game with friends or join a public tournament with one tap.' },
-  { title: 'Buy Your Tickets',        desc: 'Purchase Tambola tickets using in-app chips. Each ticket is unique and auto-generated.' },
-  { title: 'Numbers Are Called',      desc: 'Sit back while numbers are called automatically. The app marks your ticket for you.' },
-  { title: 'Claim & Win!',            desc: 'Tap Claim when you complete a row, two rows, or full house. Prizes credited instantly.' },
+  { title: 'Download & Register',       desc: 'Install Tambola Circle free on Android. Register with your mobile number and get welcome chips to kick off your first game.' },
+  { title: 'Join a Room or Tournament', desc: 'Browse open game rooms, create a private room for family and friends, or join a scheduled tournament with a fixed prize pool.' },
+  { title: 'Buy Your Tickets',          desc: 'Buy 1 to 6 Tambola tickets per game using chips. Each ticket is a unique 3×9 grid with 15 randomly placed numbers.' },
+  { title: 'Watch the Live Ticker',     desc: 'Numbers 1–90 are announced one by one on the live ticker. Your ticket is auto-marked as each number is called — no tapping needed.' },
+  { title: 'Claim Your Prize!',         desc: 'Complete Early 5, Top Line, Middle Line, Bottom Line, or Full House and tap Claim instantly. Winnings are credited to your wallet right away.' },
 ]
 
 function HowToPlay() {
@@ -136,7 +137,7 @@ function HowToPlay() {
           <div className="htp-content">
             <span className="section-label">Simple & Fun</span>
             <h2 className="section-title">How to Play<br />Tambola Circle</h2>
-            <p className="section-sub">Get started in minutes — Tambola Circle is designed to feel exactly like the game you've always loved.</p>
+            <p className="section-sub">Get started in minutes — live ticker, auto-mark, and one-tap prize claims make it feel exactly like the Tambola you've always loved.</p>
             <div className="steps">
               {steps.map((s, i) => (
                 <div className="step" key={i}>
@@ -163,7 +164,7 @@ function Download() {
           <div className="download-content">
             <span className="section-label">Get the App</span>
             <h2 className="section-title">Download Tambola Circle for Free</h2>
-            <p className="section-sub">Available on Android. Install in seconds and start playing with your group right away — no registration hassle.</p>
+            <p className="section-sub">Available free on Android. Install in seconds, get welcome chips on sign-up, and jump into a live game with the ticker calling numbers right away.</p>
             <a href={DOWNLOAD_URL} target="_blank" rel="noreferrer" className="btn-primary download-btn">
               ↓ &nbsp;Download Tambola Circle
             </a>
@@ -187,15 +188,17 @@ function About() {
             <span className="section-label">About Us</span>
             <h2 className="section-title">Tambola Circle — the game of probability, reimagined</h2>
             <p className="section-sub">
-              Tambola Circle brings the beloved Indian party game to your smartphone. Whether it's Diwali, a family reunion,
-              or just a lazy Sunday — gather your group and play Tambola just like the old days, from anywhere.
+              Tambola Circle brings the beloved Indian party game to your smartphone. Live ticker calling,
+              auto-marked tickets, and instant prize claims — play with family, friends, or strangers in
+              open rooms and tournaments, anytime from anywhere.
             </p>
             <ul className="about-points">
-              <li>Fully online — play from anywhere in India</li>
-              <li>Private rooms for family &amp; friends</li>
-              <li>Fair, transparent number calling</li>
-              <li>Secure payments &amp; instant prize credits</li>
-              <li>24/7 customer support</li>
+              <li>Live ticker — numbers 1–90 called one by one, auto-marked on your ticket</li>
+              <li>Buy 1 to 6 tickets per game for more chances to win</li>
+              <li>5 prize categories: Early 5, Top Line, Middle Line, Bottom Line, Full House</li>
+              <li>Private rooms for family &amp; friends, or join open public rooms</li>
+              <li>Secure chips wallet with instant prize credits &amp; withdrawals</li>
+              <li>Practice mode with bots &amp; scheduled tournaments with prize pools</li>
             </ul>
           </div>
           <div className="about-img">
