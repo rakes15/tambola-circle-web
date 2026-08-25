@@ -8,20 +8,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger deploy webhook
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to server
+        env:
+          SSH_PASS: ${{ secrets.SSH_PASS }}
         run: |
-          PAYLOAD='{}'
-          SIGNATURE=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "${{ secrets.DEPLOY_WEBHOOK_SECRET }}" | awk '{print "sha256="$2}')
-          RESPONSE=$(curl -s -o /tmp/deploy_response.txt -w "%{http_code}" \
-            -X POST "https://api.tambolacircle.com/deploy-web" \
-            -H "Content-Type: application/json" \
-            -H "X-Hub-Signature-256: $SIGNATURE" \
-            -d "$PAYLOAD" \
-            --max-time 90)
-          echo "HTTP Status: $RESPONSE"
-          cat /tmp/deploy_response.txt
-          if [ "$RESPONSE" != "200" ]; then
-            echo "Deploy failed!"
-            exit 1
-          fi
-          echo "✓ Web deploy triggered successfully"
+          sudo apt-get install -y sshpass rsync
+          sshpass -p "$SSH_PASS" rsync -avz --delete --exclude=download/ \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            dist/ root@212.38.94.27:/home/user/web/tambolacircle.com/public_html/
+          echo "✓ Website deployed successfully"
