@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tambola Circle — Payment Requests</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --card: #1a2233;
+    --border: #2a3448;
+    --text: #e8ecf3;
+    --muted: #8b96ab;
+    --accent: #6c5ce7;
+    --green: #22c55e;
+    --red: #ef4444;
+    --gold: #f5b942;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+
+  /* Login */
+  .login-box {
+    max-width: 360px; margin: 80px auto; background: var(--card);
+    border: 1px solid var(--border); border-radius: 14px; padding: 28px;
+  }
+  .login-box h2 { margin-top: 0; }
+  input {
+    width: 100%; padding: 12px 14px; margin-bottom: 12px;
+    background: #0f1420; border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 0.95rem;
+  }
+  button {
+    cursor: pointer; border: none; border-radius: 8px; padding: 11px 16px;
+    font-size: 0.9rem; font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-approve { background: var(--green); color: #05210f; }
+  .btn-reject { background: var(--red); color: #2c0808; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .error { color: var(--red); font-size: 0.85rem; min-height: 18px; margin-top: -4px; margin-bottom: 8px; }
+
+  /* Top bar */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  #soundToggle { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 10px; }
+  #logoutBtn { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 0.85rem;
+  }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab .count {
+    display: inline-block; margin-left: 6px; background: rgba(255,255,255,0.2);
+    border-radius: 10px; padding: 0 7px; font-size: 0.75rem;
+  }
+
+  /* Cards */
+  .req-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 12px; display: flex; gap: 14px;
+  }
+  .req-card.is-new { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+  .thumb {
+    width: 84px; height: 84px; border-radius: 8px; object-fit: cover;
+    background: #0a0d14; cursor: pointer; flex-shrink: 0;
+  }
+  .req-info { flex: 1; min-width: 0; }
+  .req-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .req-amount { font-size: 1.2rem; font-weight: 700; color: var(--gold); }
+  .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+  .badge-pending { background: rgba(245,185,66,0.15); color: var(--gold); }
+  .badge-approved { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-rejected { background: rgba(239,68,68,0.15); color: var(--red); }
+  .req-meta { color: var(--muted); font-size: 0.82rem; margin-top: 4px; line-height: 1.5; }
+  .req-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+
+  /* Modal (screenshot viewer) */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    align-items: center; justify-content: center; z-index: 50; padding: 20px;
+  }
+  .modal-bg.open { display: flex; }
+  .modal-bg img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
+
+  #toast {
+    position: fixed; top: 16px; right: 16px; background: var(--gold); color: #2b1c00;
+    padding: 12px 18px; border-radius: 10px; font-weight: 600; font-size: 0.88rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: none; z-index: 60; max-width: 300px;
+  }
+
+  /* Settings modal */
+  .settings-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 24px; max-width: 380px; width: 100%;
+  }
+  .settings-panel h2 { margin: 0 0 4px; font-size: 1.15rem; }
+  .settings-panel .sub { margin-bottom: 20px; }
+  .setting-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-of-type { border-bottom: none; }
+  .setting-label { font-size: 0.9rem; }
+  .setting-hint { color: var(--muted); font-size: 0.76rem; margin-top: 2px; }
+  .setting-row input[type="number"] {
+    width: 80px; margin-bottom: 0; text-align: center; padding: 8px 6px;
+  }
+
+  /* Toggle switch */
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; margin: 0; }
+  .switch .slider {
+    position: absolute; cursor: pointer; inset: 0; background: var(--border);
+    border-radius: 24px; transition: background 0.15s;
+  }
+  .switch .slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background: var(--text); border-radius: 50%; transition: transform 0.15s;
+  }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: #05210f; }
+
+  .settings-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .settings-actions button { flex: 1; }
+  .settings-error { color: var(--red); font-size: 0.82rem; min-height: 18px; margin-top: 10px; }
+  .settings-success { color: var(--green); font-size: 0.82rem; min-height: 18px; margin-top: 10px; }
+
+  /* Users modal */
+  .users-panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 24px; max-width: 560px; width: 100%; max-height: 82vh;
+    display: flex; flex-direction: column;
+  }
+  .users-panel h2 { margin: 0 0 4px; font-size: 1.15rem; }
+  .users-panel .sub { margin-bottom: 16px; }
+  #userSearch { margin-bottom: 14px; flex-shrink: 0; }
+  #usersList { overflow-y: auto; flex: 1; min-height: 0; }
+  .user-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px;
+  }
+  .user-row:last-child { border-bottom: none; }
+  .user-name { font-size: 0.9rem; font-weight: 600; }
+  .user-meta { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+  .user-bot-toggle { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .user-bot-label { font-size: 0.78rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="loginView" class="wrap" style="display:none">
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <input id="loginId" placeholder="Username / mobile number" autocomplete="username" />
+    <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" />
+    <div class="error" id="loginError"></div>
+    <button class="btn-primary" onclick="doLogin()">Log In</button>
+  </div>
+</div>
+
+<div id="mainView" class="wrap" style="display:none">
+  <div class="topbar">
+    <div>
+      <h1>Payment Requests</h1>
+      <div class="sub">Wallet recharge review — Tambola Circle</div>
+    </div>
+    <div class="topbar-right">
+      <button id="usersBtn" class="btn-ghost" onclick="openUsersModal()">👥 Users</button>
+      <button id="settingsBtn" class="btn-ghost" onclick="openSettingsModal()">⚙️ Bot Settings</button>
+      <button id="soundToggle" onclick="toggleSound()">🔔 Sound: On</button>
+      <button id="logoutBtn" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-status="0" onclick="switchTab(0)">Pending <span class="count" id="countPending">0</span></button>
+    <button class="tab" data-status="1" onclick="switchTab(1)">Approved</button>
+    <button class="tab" data-status="2" onclick="switchTab(2)">Rejected</button>
+    <button class="tab" data-status="" onclick="switchTab('')">All</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="closeModal()">
+  <img id="modalImg" src="" alt="Payment screenshot" />
+</div>
+
+<div class="modal-bg" id="settingsModalBg" onclick="if (event.target === this) closeSettingsModal()">
+  <div class="settings-panel">
+    <h2>Bot Settings</h2>
+    <div class="sub">Controls Quick Play &amp; Tournament auto-fill</div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Bots Enabled</div>
+        <div class="setting-hint">Master switch — off disables all bot auto-fill</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="settingBotsEnabled" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Tournament Bot Count</div>
+        <div class="setting-hint">Bots added when a tournament has ≤3 human players</div>
+      </div>
+      <input type="number" id="settingTournamentBotCount" min="0" max="50" />
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Quick Game Min Players</div>
+        <div class="setting-hint">Total players (human + bot) required to start</div>
+      </div>
+      <input type="number" id="settingQuickGameMinPlayers" min="1" max="50" />
+    </div>
+
+    <div class="settings-error" id="settingsError"></div>
+    <div class="settings-success" id="settingsSuccess"></div>
+
+    <div class="settings-actions">
+      <button class="btn-ghost" onclick="closeSettingsModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="usersModalBg" onclick="if (event.target === this) closeUsersModal()">
+  <div class="users-panel">
+    <h2>Users</h2>
+    <div class="sub">Toggle "Bot" to include/exclude a user from tournament &amp; Quick Play auto-fill</div>
+    <input id="userSearch" placeholder="Search by name, username, email or phone…" oninput="debouncedLoadUsers()" />
+    <div id="usersList"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<audio id="dingSound" preload="auto">
+  <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+</audio>
+
+<script>
+const API_BASE = 'https://api.tambolacircle.com';
+const POLL_INTERVAL_MS = 15000;
+
+// Shares the exact same session as the main admin dashboard (same origin,
+// same localStorage key) — if you're already logged into /admin, this skips
+// login entirely instead of asking a second time.
+let authToken = localStorage.getItem('authToken') || null;
+let currentTab = 0;
+let knownIds = new Set(JSON.parse(localStorage.getItem('pa_known_ids') || '[]'));
+let soundOn = localStorage.getItem('pa_sound') !== 'off';
+let pollTimer = null;
+
+function saveKnownIds() {
+  localStorage.setItem('pa_known_ids', JSON.stringify([...knownIds]));
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: 'Bearer ' + authToken } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || ('HTTP ' + res.status));
+  return data;
+}
+
+async function doLogin() {
+  const identifier = document.getElementById('loginId').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!identifier || !password) {
+    errEl.textContent = 'Enter username and password';
+    return;
+  }
+  try {
+    const resp = await api('/login', { method: 'POST', body: JSON.stringify({ identifier, password }) });
+    const userType = resp.data?.user?.user_type;
+    if (userType !== 'ADMIN' && userType !== 'ROOT') {
+      errEl.textContent = 'This account is not an admin.';
+      return;
+    }
+    authToken = resp.data.auth_token;
+    // Stored under the same key the main admin dashboard uses, so logging in
+    // here (e.g. on a fresh/standalone visit) also leaves you logged into
+    // the main site — one shared session either direction.
+    localStorage.setItem('authToken', authToken);
+    showMain();
+  } catch (e) {
+    errEl.textContent = e.message || 'Login failed';
+  }
+}
+
+function logout() {
+  // Clears the *shared* session, so the main admin dashboard is logged out
+  // too, not just this view — avoids an inconsistent half-logged-in state.
+  authToken = null;
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('userData');
+  if (pollTimer) clearInterval(pollTimer);
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.location.reload();
+      return;
+    }
+  } catch (_) {}
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('mainView').style.display = 'none';
+}
+
+function showMain() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('mainView').style.display = 'block';
+  requestNotificationPermission();
+  loadRequests();
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(loadRequests, POLL_INTERVAL_MS);
+}
+
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  localStorage.setItem('pa_sound', soundOn ? 'on' : 'off');
+  document.getElementById('soundToggle').textContent = soundOn ? '🔔 Sound: On' : '🔕 Sound: Off';
+}
+
+function switchTab(status) {
+  currentTab = status;
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  document.querySelector(`.tab[data-status="${status}"]`).classList.add('active');
+  loadRequests();
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function playDing() {
+  if (!soundOn) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    o.start(); o.stop(ctx.currentTime + 0.4);
+  } catch (_) {}
+}
+
+function notifyNewRequests(newOnes) {
+  if (newOnes.length === 0) return;
+  playDing();
+  const msg = newOnes.length === 1
+    ? `New ₹${newOnes[0].amount} recharge request (ref: ${newOnes[0].reference_id})`
+    : `${newOnes.length} new payment requests awaiting review`;
+  showToast('🔔 ' + msg);
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Tambola Circle — Payment Request', { body: msg });
+  }
+}
+
+async function loadRequests() {
+  try {
+    const qs = currentTab === '' ? '' : `?status=${currentTab}`;
+    const resp = await api('/admin/payment-requests' + qs);
+    const requests = resp.data || [];
+
+    // Detect brand-new pending requests since last poll (only meaningful while viewing/tracking pending).
+    const pendingNow = requests.filter((r) => r.trans_status === 0);
+    const newOnes = pendingNow.filter((r) => !knownIds.has(r.id));
+    pendingNow.forEach((r) => knownIds.add(r.id));
+    saveKnownIds();
+    if (newOnes.length > 0) notifyNewRequests(newOnes);
+
+    // Pending count badge always reflects true pending total, regardless of active tab.
+    if (currentTab !== 0) {
+      try {
+        const allPending = await api('/admin/payment-requests?status=0');
+        document.getElementById('countPending').textContent = (allPending.data || []).length;
+      } catch (_) {}
+    } else {
+      document.getElementById('countPending').textContent = requests.length;
+    }
+
+    renderList(requests, newOnes.map((r) => r.id));
+  } catch (e) {
+    if (e.message && e.message.toLowerCase().includes('token')) {
+      logout();
+    } else {
+      document.getElementById('list').innerHTML = `<div class="empty">Failed to load: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+function statusBadge(status) {
+  if (status === 0) return '<span class="badge badge-pending">Pending</span>';
+  if (status === 1) return '<span class="badge badge-approved">Approved</span>';
+  return '<span class="badge badge-rejected">Rejected</span>';
+}
+
+function renderList(requests, highlightIds) {
+  const listEl = document.getElementById('list');
+  if (requests.length === 0) {
+    listEl.innerHTML = '<div class="empty">No requests here.</div>';
+    return;
+  }
+  listEl.innerHTML = requests.map((r) => {
+    const userName = r.User ? `${r.User.first_name || ''} ${r.User.last_name || ''}`.trim() : r.user_id;
+    const isNew = highlightIds.includes(r.id);
+    const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : '';
+    const txn = r.transaction
+      ? `<br/>Credited: ₹${r.transaction.amount} on ${new Date(r.transaction.createdAt).toLocaleString()}`
+      : '';
+    const actions = r.trans_status === 0
+      ? `<div class="req-actions">
+           <button class="btn-approve" onclick="review('${r.id}','approve')">Approve</button>
+           <button class="btn-reject" onclick="review('${r.id}','reject')">Reject</button>
+         </div>`
+      : '';
+    return `
+      <div class="req-card ${isNew ? 'is-new' : ''}">
+        <img class="thumb" src="${r.screenshot_url}" onclick="openModal('${r.screenshot_url}')" alt="proof" />
+        <div class="req-info">
+          <div class="req-top">
+            <div class="req-amount">₹${r.amount}</div>
+            ${statusBadge(r.trans_status)}
+          </div>
+          <div class="req-meta">
+            ${escapeHtml(userName)} (${escapeHtml(r.User?.user_name || '')})<br/>
+            Ref: ${escapeHtml(r.reference_id)}<br/>
+            Submitted: ${created}${txn}
+          </div>
+          ${actions}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function review(id, action) {
+  if (!confirm(`${action === 'approve' ? 'Approve' : 'Reject'} this request?`)) return;
+  try {
+    await api(`/admin/payment-requests/${id}/${action}`, { method: 'POST', body: JSON.stringify({}) });
+    loadRequests();
+  } catch (e) {
+    alert('Failed: ' + e.message);
+  }
+}
+
+function openModal(url) {
+  document.getElementById('modalImg').src = url;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+}
+
+async function openSettingsModal() {
+  document.getElementById('settingsError').textContent = '';
+  document.getElementById('settingsSuccess').textContent = '';
+  try {
+    const resp = await api('/admin/settings');
+    const s = resp.data || {};
+    document.getElementById('settingBotsEnabled').checked = !!s.bots_enabled;
+    document.getElementById('settingTournamentBotCount').value = s.tournament_bot_count ?? 6;
+    document.getElementById('settingQuickGameMinPlayers').value = s.quick_game_min_players ?? 10;
+    document.getElementById('settingsModalBg').classList.add('open');
+  } catch (e) {
+    alert('Failed to load settings: ' + e.message);
+  }
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModalBg').classList.remove('open');
+}
+
+async function saveSettings() {
+  const errEl = document.getElementById('settingsError');
+  const okEl = document.getElementById('settingsSuccess');
+  errEl.textContent = '';
+  okEl.textContent = '';
+
+  const bots_enabled = document.getElementById('settingBotsEnabled').checked;
+  const tournament_bot_count = parseInt(document.getElementById('settingTournamentBotCount').value, 10);
+  const quick_game_min_players = parseInt(document.getElementById('settingQuickGameMinPlayers').value, 10);
+
+  if (Number.isNaN(tournament_bot_count) || tournament_bot_count < 0 || tournament_bot_count > 50) {
+    errEl.textContent = 'Tournament bot count must be between 0 and 50';
+    return;
+  }
+  if (Number.isNaN(quick_game_min_players) || quick_game_min_players < 1 || quick_game_min_players > 50) {
+    errEl.textContent = 'Quick game min players must be between 1 and 50';
+    return;
+  }
+
+  try {
+    await api('/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ bots_enabled, tournament_bot_count, quick_game_min_players }),
+    });
+    okEl.textContent = 'Saved ✓';
+    setTimeout(closeSettingsModal, 900);
+  } catch (e) {
+    errEl.textContent = e.message || 'Save failed';
+  }
+}
+
+let usersSearchTimer = null;
+function debouncedLoadUsers() {
+  clearTimeout(usersSearchTimer);
+  usersSearchTimer = setTimeout(loadUsers, 300);
+}
+
+function openUsersModal() {
+  document.getElementById('userSearch').value = '';
+  document.getElementById('usersModalBg').classList.add('open');
+  loadUsers();
+}
+
+function closeUsersModal() {
+  document.getElementById('usersModalBg').classList.remove('open');
+}
+
+async function loadUsers() {
+  const listEl = document.getElementById('usersList');
+  const search = document.getElementById('userSearch').value.trim();
+  try {
+    const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+    const resp = await api('/admin/users' + qs);
+    const users = resp.data || [];
+    if (users.length === 0) {
+      listEl.innerHTML = '<div class="empty">No users found.</div>';
+      return;
+    }
+    listEl.innerHTML = users.map((u) => {
+      const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.user_name;
+      return `
+        <div class="user-row">
+          <div>
+            <div class="user-name">${escapeHtml(name)}</div>
+            <div class="user-meta">${escapeHtml(u.user_name || '')} · ${escapeHtml(u.cell_no || '')}</div>
+          </div>
+          <div class="user-bot-toggle">
+            <span class="user-bot-label">Bot</span>
+            <label class="switch">
+              <input type="checkbox" ${u.is_bot ? 'checked' : ''} onchange="toggleUserBot('${u.id}', this)" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty">Failed to load: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function toggleUserBot(userId, checkboxEl) {
+  const desired = checkboxEl.checked;
+  checkboxEl.disabled = true;
+  try {
+    await api(`/admin/users/${userId}/bot`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_bot: desired }),
+    });
+  } catch (e) {
+    checkboxEl.checked = !desired; // revert on failure
+    alert('Failed: ' + e.message);
+  } finally {
+    checkboxEl.disabled = false;
+  }
+}
+
+document.getElementById('soundToggle').textContent = soundOn ? '🔔 Sound: On' : '🔕 Sound: Off';
+
+if (authToken) {
+  showMain();
+} else {
+  showLogin();
+}
+</script>
+</body>
+</html>
