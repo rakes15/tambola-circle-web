@@ -9,9 +9,30 @@
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="/css/fontawesome-all.min.css">
     <script>
-      // React Router v5 exact-match: /admin/ (trailing slash) falls through to catch-all.
-      // Strip it before the module initializes so the router sees /admin.
       if (location.pathname === '/admin/') history.replaceState(null, '', '/admin');
+      console.log('[admin] pathname after replaceState:', location.pathname);
+
+      // Intercept hard redirects — old SPA redirects to / when unauthenticated
+      // but / now serves the new Vite site. Catch all location changes and
+      // redirect / back to /admin/login so the login form stays accessible.
+      (function() {
+        function guard(url) {
+          try {
+            var p = new URL(url, location.href).pathname;
+            if (p === '/') { console.warn('[admin-guard] blocked / redirect, going to /admin/login'); return '/admin/login'; }
+          } catch(e) {}
+          return url;
+        }
+        var desc = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
+        if (desc && desc.set) {
+          var s = desc.set;
+          Object.defineProperty(Location.prototype, 'href', { get: desc.get, set: function(u) { s.call(this, guard(u)); }, configurable: true });
+        }
+        var oa = Location.prototype.assign;
+        Location.prototype.assign = function(u) { oa.call(this, guard(u)); };
+        var or = Location.prototype.replace;
+        Location.prototype.replace = function(u) { or.call(this, guard(u)); };
+      })();
     </script>
     <script type="module" crossorigin src="/assets/index-LMUfv-YS.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-7zf8M4Aa.css">
