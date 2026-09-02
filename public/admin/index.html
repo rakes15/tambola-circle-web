@@ -8,6 +8,11 @@
 
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="/css/fontawesome-all.min.css">
+    <script>
+      // React Router v5 exact-match: /admin/ (trailing slash) falls through to catch-all.
+      // Strip it before the module initializes so the router sees /admin.
+      if (location.pathname === '/admin/') history.replaceState(null, '', '/admin');
+    </script>
     <script type="module" crossorigin src="/assets/index-LMUfv-YS.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-7zf8M4Aa.css">
   </head>
