@@ -2,13 +2,13 @@
   RewriteEngine On
   RewriteBase /
 
-  # Don't rewrite real files or directories
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
+  # Serve real files directly
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
 
-  # Admin routes -> admin/index.html (old React SPA)
+  # Admin routes -> old React SPA (matches /admin, /admin/, /admin/*)
   RewriteRule ^admin(/.*)?$ /admin/index.html [L]
 
-  # Everything else -> index.html (new Vite SPA)
-  RewriteRule ^ index.html [L]
+  # Everything else -> new Vite landing page
+  RewriteRule ^ /index.html [L]
 </IfModule>
