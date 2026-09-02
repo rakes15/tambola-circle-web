@@ -35,11 +35,17 @@
         var origPush = history.pushState;
         var origReplace = history.replaceState;
         history.pushState = function(state, title, url) {
-          return origPush.call(history, state, title, isRoot(url) ? '/admin/login' : url);
+          console.log('[admin-guard] pushState:', url);
+          var dest = isRoot(url) ? '/admin/login' : url;
+          if (dest !== url) console.warn('[admin-guard] redirected push to', dest);
+          return origPush.call(history, state, title, dest);
         };
         history.replaceState = function(state, title, url) {
+          console.log('[admin-guard] replaceState:', url);
           if (url == null || url === '') return origReplace.call(history, state, title, url);
-          return origReplace.call(history, state, title, isRoot(url) ? '/admin/login' : url);
+          var dest = isRoot(url) ? '/admin/login' : url;
+          if (dest !== url) console.warn('[admin-guard] redirected replace to', dest);
+          return origReplace.call(history, state, title, dest);
         };
       })();
     </script>
