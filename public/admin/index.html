@@ -10,28 +10,37 @@
     <link rel="stylesheet" href="/css/fontawesome-all.min.css">
     <script>
       if (location.pathname === '/admin/') history.replaceState(null, '', '/admin');
-      console.log('[admin] pathname after replaceState:', location.pathname);
 
-      // Intercept hard redirects — old SPA redirects to / when unauthenticated
-      // but / now serves the new Vite site. Catch all location changes and
-      // redirect / back to /admin/login so the login form stays accessible.
       (function() {
-        function guard(url) {
-          try {
-            var p = new URL(url, location.href).pathname;
-            if (p === '/') { console.warn('[admin-guard] blocked / redirect, going to /admin/login'); return '/admin/login'; }
-          } catch(e) {}
-          return url;
+        function isRoot(url) {
+          if (url == null) return false;
+          try { return new URL(String(url), location.href).pathname === '/'; } catch(e) { return false; }
         }
+        function guardHard(u) { return isRoot(u) ? '/admin/login' : u; }
+
+        // Intercept hard navigations (location.href / .assign / .replace)
         var desc = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
         if (desc && desc.set) {
           var s = desc.set;
-          Object.defineProperty(Location.prototype, 'href', { get: desc.get, set: function(u) { s.call(this, guard(u)); }, configurable: true });
+          try {
+            Object.defineProperty(Location.prototype, 'href', { get: desc.get, set: function(u) { s.call(this, guardHard(u)); }, configurable: true });
+          } catch(e) {}
         }
         var oa = Location.prototype.assign;
-        Location.prototype.assign = function(u) { oa.call(this, guard(u)); };
+        Location.prototype.assign = function(u) { oa.call(this, guardHard(u)); };
         var or = Location.prototype.replace;
-        Location.prototype.replace = function(u) { or.call(this, guard(u)); };
+        Location.prototype.replace = function(u) { or.call(this, guardHard(u)); };
+
+        // Intercept React Router's client-side pushState/replaceState to /
+        var origPush = history.pushState;
+        var origReplace = history.replaceState;
+        history.pushState = function(state, title, url) {
+          return origPush.call(history, state, title, isRoot(url) ? '/admin/login' : url);
+        };
+        history.replaceState = function(state, title, url) {
+          if (url == null || url === '') return origReplace.call(history, state, title, url);
+          return origReplace.call(history, state, title, isRoot(url) ? '/admin/login' : url);
+        };
       })();
     </script>
     <script type="module" crossorigin src="/assets/index-LMUfv-YS.js"></script>
