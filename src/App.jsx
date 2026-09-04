@@ -221,7 +221,7 @@ function Contact() {
   function handleSubmit(e) {
     e.preventDefault()
     const { name, email, message } = form
-    const mailto = `mailto:support@tambolacircle.com?subject=Enquiry from ${encodeURIComponent(name)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`
+    const mailto = `mailto:shaliniex1983@gmail.com?subject=Enquiry from ${encodeURIComponent(name)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`
     window.location.href = mailto
     setSent(true)
   }
@@ -252,7 +252,7 @@ function Contact() {
                 <div className="contact-icon">✉️</div>
                 <div className="contact-item-text">
                   <strong>Email</strong>
-                  <span><a href="mailto:support@tambolacircle.com">support@tambolacircle.com</a></span>
+                  <span><a href="mailto:shaliniex1983@gmail.com">shaliniex1983@gmail.com</a></span>
                 </div>
               </div>
             </div>
