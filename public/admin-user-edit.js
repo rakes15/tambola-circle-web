@@ -187,10 +187,10 @@
 
     // Floating button — hidden until user is logged in
     const fabWrap = document.createElement('div');
-    fabWrap.style.cssText = 'position:fixed;bottom:90px;right:18px;z-index:8000;display:none;';
+    fabWrap.style.cssText = 'position:fixed;bottom:109px;right:18px;z-index:8000;display:none;';
     fabWrap.innerHTML = `
       <button id="tcSupportFab" title="Support Queries"
-        style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(124,58,237,0.55);display:flex;align-items:center;justify-content:center;font-size:1.4rem;position:relative;">
+        style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(124,58,237,0.55);display:flex;align-items:center;justify-content:center;font-size:1.5rem;position:relative;">
         💬
         <span id="tcSupportBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:0.65rem;font-weight:700;align-items:center;justify-content:center;line-height:1;padding:0 4px;border:2px solid #0f1420;"></span>
       </button>`;
