@@ -137,7 +137,10 @@
   function startObserver() {
     if (observerActive) return;
     observerActive = true;
-    const observer = new MutationObserver(() => addEditButtons());
+    const observer = new MutationObserver(() => {
+      addEditButtons();
+      showFabWhenLoggedIn();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
@@ -182,14 +185,17 @@
   function injectSupportPanel() {
     if (document.getElementById('tcSupportOverlay')) return;
 
-    // Floating button
-    const fab = document.createElement('button');
-    fab.id = 'tcSupportFab';
-    fab.innerHTML = '💬 <span id="tcSupportBadge" style="display:none;background:#ef4444;color:#fff;border-radius:50%;padding:1px 6px;font-size:0.7rem;margin-left:3px;"></span>';
-    fab.style.cssText =
-      'position:fixed;bottom:80px;right:20px;z-index:8000;padding:10px 16px;background:#7c3aed;border:none;border-radius:22px;color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.4);';
-    fab.addEventListener('click', openSupportPanel);
-    document.body.appendChild(fab);
+    // Floating button — hidden until user is logged in
+    const fabWrap = document.createElement('div');
+    fabWrap.style.cssText = 'position:fixed;bottom:90px;right:18px;z-index:8000;display:none;';
+    fabWrap.innerHTML = `
+      <button id="tcSupportFab" title="Support Queries"
+        style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;cursor:pointer;box-shadow:0 4px 18px rgba(124,58,237,0.55);display:flex;align-items:center;justify-content:center;font-size:1.4rem;position:relative;">
+        💬
+        <span id="tcSupportBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:0.65rem;font-weight:700;align-items:center;justify-content:center;line-height:1;padding:0 4px;border:2px solid #0f1420;"></span>
+      </button>`;
+    document.body.appendChild(fabWrap);
+    document.getElementById('tcSupportFab').addEventListener('click', openSupportPanel);
 
     // Modal overlay
     const overlay = document.createElement('div');
@@ -292,13 +298,25 @@
     if (!badge) return;
     if (sqBadgeCount > 0) {
       badge.textContent = sqBadgeCount;
-      badge.style.display = 'inline';
+      badge.style.display = 'flex';
     } else {
       badge.style.display = 'none';
     }
   }
 
+  function showFabWhenLoggedIn() {
+    const fab = document.getElementById('tcSupportFab');
+    if (!fab) return;
+    const wrap = fab.parentElement;
+    // Hide on login page (login form visible) or when no token
+    const onLoginPage = !!document.querySelector('input[type="password"]');
+    const visible = !!getToken() && !onLoginPage;
+    wrap.style.display = visible ? 'block' : 'none';
+  }
+
   async function fetchSupportBadge() {
+    showFabWhenLoggedIn();
+    if (!getToken()) return;
     try {
       const resp = await fetch(`${API}/support/queries?status=open`, {
         headers: { Authorization: 'Bearer ' + getToken() },
