@@ -145,7 +145,15 @@
     if (injected) return;
     injected = true;
     injectModal();
+    injectSupportPanel();
     startObserver();
+    // Fetch badge count once token is available (retry briefly)
+    let attempts = 0;
+    const badgePoll = setInterval(() => {
+      attempts++;
+      if (getToken()) { fetchSupportBadge(); clearInterval(badgePoll); }
+      if (attempts > 20) clearInterval(badgePoll);
+    }, 500);
 
     // Re-fetch user map whenever navigating to the Users page
     let lastPath = '';
@@ -166,6 +174,141 @@
       addEditButtons();
     }
   }
+
+  // ── Support Queries Panel ──────────────────────────────────────────
+  let sqTab = 'open';
+  let sqBadgeCount = 0;
+
+  function injectSupportPanel() {
+    if (document.getElementById('tcSupportOverlay')) return;
+
+    // Floating button
+    const fab = document.createElement('button');
+    fab.id = 'tcSupportFab';
+    fab.innerHTML = '💬 <span id="tcSupportBadge" style="display:none;background:#ef4444;color:#fff;border-radius:50%;padding:1px 6px;font-size:0.7rem;margin-left:3px;"></span>';
+    fab.style.cssText =
+      'position:fixed;bottom:80px;right:20px;z-index:8000;padding:10px 16px;background:#7c3aed;border:none;border-radius:22px;color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.4);';
+    fab.addEventListener('click', openSupportPanel);
+    document.body.appendChild(fab);
+
+    // Modal overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'tcSupportOverlay';
+    overlay.style.cssText =
+      'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9998;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:#141b2d;border:1px solid #2a3448;border-radius:16px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #2a3448;">
+          <h3 style="margin:0;color:#e8ecf3;font-size:1rem;">💬 Support Queries</h3>
+          <button id="tcSupportClose" style="background:transparent;border:none;color:#8b96ab;font-size:1.3rem;cursor:pointer;">✕</button>
+        </div>
+        <div style="display:flex;gap:0;border-bottom:1px solid #2a3448;">
+          <button id="tcSqTabOpen" onclick="window._tcSqTab('open')" style="flex:1;padding:11px;background:#7c3aed;border:none;color:#fff;font-weight:700;cursor:pointer;font-size:0.85rem;">Open</button>
+          <button id="tcSqTabResolved" onclick="window._tcSqTab('resolved')" style="flex:1;padding:11px;background:transparent;border:none;color:#8b96ab;cursor:pointer;font-size:0.85rem;">Resolved</button>
+        </div>
+        <div id="tcSqList" style="overflow-y:auto;padding:14px 18px;flex:1;min-height:120px;"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSupportPanel(); });
+    document.getElementById('tcSupportClose').addEventListener('click', closeSupportPanel);
+
+    window._tcSqTab = (tab) => {
+      sqTab = tab;
+      document.getElementById('tcSqTabOpen').style.background = tab === 'open' ? '#7c3aed' : 'transparent';
+      document.getElementById('tcSqTabOpen').style.color = tab === 'open' ? '#fff' : '#8b96ab';
+      document.getElementById('tcSqTabResolved').style.background = tab === 'resolved' ? '#7c3aed' : 'transparent';
+      document.getElementById('tcSqTabResolved').style.color = tab === 'resolved' ? '#fff' : '#8b96ab';
+      loadSupportQueries();
+    };
+  }
+
+  function openSupportPanel() {
+    document.getElementById('tcSupportOverlay').style.display = 'flex';
+    sqTab = 'open';
+    window._tcSqTab('open');
+  }
+
+  function closeSupportPanel() {
+    document.getElementById('tcSupportOverlay').style.display = 'none';
+  }
+
+  async function loadSupportQueries() {
+    const list = document.getElementById('tcSqList');
+    list.innerHTML = '<p style="color:#8b96ab;text-align:center;padding:24px 0;">Loading…</p>';
+    try {
+      const resp = await fetch(`${API}/support/queries?status=${sqTab}`, {
+        headers: { Authorization: 'Bearer ' + getToken() },
+      });
+      const data = await resp.json();
+      const queries = data.data || [];
+
+      if (sqTab === 'open') {
+        sqBadgeCount = queries.length;
+        updateSupportBadge();
+      }
+
+      if (!queries.length) {
+        list.innerHTML = `<p style="color:#8b96ab;text-align:center;padding:24px 0;">No ${sqTab} queries.</p>`;
+        return;
+      }
+
+      list.innerHTML = queries.map((q) => `
+        <div style="background:#1a2233;border:1px solid #2a3448;border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+            <div>
+              <span style="color:#e8ecf3;font-weight:600;font-size:0.88rem;">${esc(q.name || 'Anonymous')}</span>
+              ${q.email ? `<span style="color:#8b96ab;font-size:0.78rem;margin-left:8px;">${esc(q.email)}</span>` : ''}
+            </div>
+            <span style="background:${q.source==='app'?'#1e40af':'#065f46'};color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:20px;">${q.source}</span>
+          </div>
+          <p style="color:#c5ccd8;font-size:0.85rem;margin:0 0 10px;white-space:pre-wrap;">${esc(q.message)}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#8b96ab;font-size:0.75rem;">${new Date(q.created_at).toLocaleString('en-IN')}</span>
+            ${sqTab === 'open' ? `<button onclick="window._tcResolve('${q.id}')" style="padding:5px 14px;background:transparent;border:1px solid #10b981;border-radius:6px;color:#10b981;font-size:0.78rem;cursor:pointer;font-weight:600;">Resolve</button>` : '<span style="color:#10b981;font-size:0.78rem;">✓ Resolved</span>'}
+          </div>
+        </div>`).join('');
+    } catch (e) {
+      list.innerHTML = '<p style="color:#ef4444;text-align:center;padding:24px 0;">Failed to load queries.</p>';
+    }
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  window._tcResolve = async (id) => {
+    try {
+      const resp = await fetch(`${API}/support/queries/${id}/resolve`, {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + getToken() },
+      });
+      if (resp.ok) loadSupportQueries();
+    } catch (_) {}
+  };
+
+  function updateSupportBadge() {
+    const badge = document.getElementById('tcSupportBadge');
+    if (!badge) return;
+    if (sqBadgeCount > 0) {
+      badge.textContent = sqBadgeCount;
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  async function fetchSupportBadge() {
+    try {
+      const resp = await fetch(`${API}/support/queries?status=open`, {
+        headers: { Authorization: 'Bearer ' + getToken() },
+      });
+      const data = await resp.json();
+      sqBadgeCount = (data.data || []).length;
+      updateSupportBadge();
+    } catch (_) {}
+  }
+  // ── End Support Queries Panel ──────────────────────────────────────
 
   // Wait for the app to boot
   if (document.readyState === 'loading') {
