@@ -212,18 +212,37 @@ function About() {
 
 function Contact() {
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    const { name, email, message } = form
-    const mailto = `mailto:shaliniex1983@gmail.com?subject=Enquiry from ${encodeURIComponent(name)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`
-    window.location.href = mailto
-    setSent(true)
+    setError('')
+    setSubmitting(true)
+    try {
+      const resp = await fetch('https://api.tambolacircle.com/support/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          message: `${form.message.trim()}${form.phone ? `\nPhone: ${form.phone}` : ''}`,
+          source: 'website',
+        }),
+      })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data.message || 'Submission failed')
+      setSent(true)
+    } catch (err) {
+      setError(err.message || 'Failed to send. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -281,7 +300,10 @@ function Contact() {
                   <label>Message</label>
                   <textarea name="message" value={form.message} onChange={handleChange} placeholder="How can we help you?" required />
                 </div>
-                <button type="submit" className="btn-primary form-submit">Send Message</button>
+                {error && <p style={{color:'#ef4444',fontSize:'0.85rem',marginBottom:'8px'}}>{error}</p>}
+                <button type="submit" className="btn-primary form-submit" disabled={submitting}>
+                  {submitting ? 'Sending…' : 'Send Message'}
+                </button>
               </form>
             )}
           </div>
