@@ -305,13 +305,16 @@
   }
 
   function showFabWhenLoggedIn() {
-    const fab = document.getElementById('tcSupportFab');
-    if (!fab) return;
-    const wrap = fab.parentElement;
-    // Hide on login page (login form visible) or when no token
     const onLoginPage = !!document.querySelector('input[type="password"]');
-    const visible = !!getToken() && !onLoginPage;
-    wrap.style.display = visible ? 'block' : 'none';
+    const loggedIn = !!getToken() && !onLoginPage;
+
+    // Support button
+    const fab = document.getElementById('tcSupportFab');
+    if (fab) fab.parentElement.style.display = loggedIn ? 'block' : 'none';
+
+    // Payment widget button
+    const payBtn = document.getElementById('pa-widget-btn');
+    if (payBtn) payBtn.parentElement.style.display = loggedIn ? '' : 'none';
   }
 
   async function fetchSupportBadge() {
