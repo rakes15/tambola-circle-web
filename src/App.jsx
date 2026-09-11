@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 
-const DOWNLOAD_URL = 'https://tambolacircle.com/download/tambola-circle-app-v1.0.3.apk'
+const DOWNLOAD_URL = 'https://tambolacircle.com/download/tambola-circle-app-v1.0.4.apk'
 
 function Navbar() {
   const [open, setOpen] = useState(false)
